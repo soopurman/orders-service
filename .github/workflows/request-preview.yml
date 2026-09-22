@@ -1,0 +1,32 @@
+name: Request preview environment
+
+on:
+  push:
+  delete:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'delete' && github.event.ref_type == 'branch' && github.event.ref != 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify preview coordinator
+        env:
+          TOKEN: ${{ secrets.PREVIEW_DISPATCH_TOKEN }}
+          CONTROL_REPO: ${{ vars.PREVIEW_CONTROL_REPOSITORY }}
+          REF: ${{ github.event_name == 'delete' && github.event.ref || github.ref_name }}
+          LIFECYCLE: ${{ github.ref_name == 'main' && 'baseline' || github.event_name == 'delete' && 'delete' || 'upsert' }}
+        run: |
+          test -n "$CONTROL_REPO" || { echo "Missing PREVIEW_CONTROL_REPOSITORY variable"; exit 1; }
+          PAYLOAD=$(jq --compact-output --null-input \
+            --arg ref "$REF" --arg lifecycle "$LIFECYCLE" \
+            '{event_type:"preview", client_payload:{service:"b", ref:$ref, lifecycle:$lifecycle}}')
+          curl --fail-with-body --request POST \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer $TOKEN" \
+            "https://api.github.com/repos/$CONTROL_REPO/dispatches" \
+            --data "$PAYLOAD"
