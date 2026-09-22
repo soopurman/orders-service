@@ -17,9 +17,11 @@ jobs:
           python-version: "3.12"
       - run: docker compose up --build --detach
       - name: Wait for the containerized API
-        run: curl --fail --retry 30 --retry-connrefused --retry-delay 2 http://localhost:8001/health
+        run: curl --fail --retry 30 --retry-all-errors --retry-delay 2 http://localhost:8001/health
       - run: pip install -r requirements-test.txt && pytest -q tests
         env:
           API_BASE_URL: http://localhost:8001
+      - if: failure()
+        run: docker compose logs
       - if: always()
         run: docker compose down --volumes
