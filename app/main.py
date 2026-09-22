@@ -80,6 +80,11 @@ def health(session: Session = Depends(get_session)):
     return {"status": "ok", "service": app.title}
 
 
+@app.get("/feature-info")
+def feature_info():
+    return {"feature": "demo", "service": "orders-service", "change": "orders branch is active"}
+
+
 @app.get("/items", response_model=list[ItemView])
 def list_items(session: Session = Depends(get_session)):
     return list(session.scalars(select(Item).order_by(Item.id)))
