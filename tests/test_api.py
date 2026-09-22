@@ -11,6 +11,10 @@ def test_crud_lifecycle_against_running_service():
     """Exercise health, every CRUD path, validation conflict, and the final 404."""
     name = f"test-{uuid.uuid4().hex}"
     with httpx.Client(base_url=BASE_URL, timeout=10) as client:
+        index = client.get("/")
+        assert index.status_code == 200
+        assert index.json()["routes"]["items"].endswith("/items")
+
         health = client.get("/health")
         assert health.status_code == 200
         assert health.json()["status"] == "ok"

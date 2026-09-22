@@ -74,6 +74,22 @@ async def strip_alb_prefix(request, call_next):
     return await call_next(request)
 
 
+@app.get("/")
+def api_index():
+    """A small, machine-friendly starting point for a service behind the shared ALB."""
+    prefix = os.getenv("PATH_PREFIX", "")
+    return {
+        "service": app.title,
+        "message": "FastAPI CRUD service. Start with GET /items or open /docs.",
+        "routes": {
+            "health": f"{prefix}/health",
+            "items": f"{prefix}/items",
+            "feature_info": f"{prefix}/feature-info",
+            "interactive_docs": f"{prefix}/docs",
+        },
+    }
+
+
 @app.get("/health")
 def health(session: Session = Depends(get_session)):
     session.execute(select(1))
